@@ -1,5 +1,6 @@
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { auth } from "../firebase_config";
+import { auth, db } from "../firebase_config";
+import { collection, getDoc, doc, setDoc } from "firebase/firestore";
 import { useState } from "react";
 
 export default function SignUp() {
@@ -7,23 +8,39 @@ export default function SignUp() {
   const [uname, setUname] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
-  
+
+  const addToDatabase = async () => {
+    const docRef = doc(db, "users", email);
+    
+    try {
+      let details = {
+        firstName: uname,
+        email: email,
+        course: null,
+      };
+      await setDoc(doc(collection(db, "users"), email), {
+        details: [details],
+      });
+    } catch (e) {
+      console.error("Error adding document: ", e);
+    }
+  };
+
   const handleSubmit = async (e) => {
-    e.preventDefault(); 
+    e.preventDefault();
 
     try {
       let user = await createUserWithEmailAndPassword(auth, email, password);
-      console.log(user);
+      let dbconnect = await addToDatabase();
+      console.log(user,dbconnect);
       setEmail("");
       setUname("");
       setPassword("");
-      setMessage('User Created')
+      setMessage("User Created");
     } catch (error) {
       setMessage(error.message);
     }
-
-    
-  }
+  };
 
   return (
     <div className="container hv-100 d-flex justify-content-center align-items-center">
@@ -55,10 +72,7 @@ export default function SignUp() {
         />
         <a href="/login">Already a user ?</a>
 
-        <button
-          onClick={(e) => handleSubmit(e)}
-          className="btn btn-primary"
-        >
+        <button onClick={(e) => handleSubmit(e)} className="btn btn-primary">
           Register
         </button>
         <span className="text-danger">{message}</span>

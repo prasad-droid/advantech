@@ -3,7 +3,7 @@ import { useEffect } from "react";
 export default function Home() {
   const handleUser = () => {
     if (!localStorage.hasOwnProperty("user")) {
-      localStorage.setItem("user", "[]");
+      localStorage.setItem("user", "{}");
     }
   };
 

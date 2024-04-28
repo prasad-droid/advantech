@@ -1,4 +1,4 @@
-import { signInWithEmailAndPassword } from "firebase/auth";
+import { signInWithEmailAndPassword, signInWithEmailLink } from "firebase/auth";
 import { useState } from "react";
 import { auth } from "../firebase_config";
 import "../App.css";
@@ -8,23 +8,20 @@ export default function Login() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [Uname, setUname] = useState("");
   const [message, setMessage] = useState("");
 
-  const setUser = () => {
-    localStorage.getItem("user");
-  };
-
+  
+  function clearFields() {
+    setEmail("");
+    setPassword("");
+  }
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+    
     try {
       let user = await signInWithEmailAndPassword(auth, email, password);
       console.log(user);
-      setEmail("");
-      setUname("");
-      setPassword("");
-      setUser(email);
+      clearFields();
       navigate("/dashboard");
     } catch (error) {
       setMessage(error.message);
