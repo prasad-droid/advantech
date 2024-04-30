@@ -1,18 +1,52 @@
-import { getDoc, addDoc, doc, documentId, setDoc } from "firebase/firestore";
+import { getDoc, doc, setDoc, updateDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { db } from "../firebase_config";
 import { v4 as uuidv4 } from "uuid";
 
-export default function Admin() {
-  const [username, setUsername] = useState("");
-  const [email, setEmail] = useState("");
-  const [course, setCourse] = useState("");
-  const [password, setPassword] = useState("");
+export default function Admin() {  
+  const [username, setAddUsername] = useState("");
+  const [email, setAddEmail] = useState("");
+  const [course, setAddCourse] = useState("");
+  const [password, setAddPassword] = useState("");
 
+  // State variables for Alter User modal
+  const [alterUsername, setAlterUsername] = useState("");
+  const [alterEmail, setAlterEmail] = useState("");
+  const [alterCourse, setAlterCourse] = useState("");
+  const [alterPassword, setAlterPassword] = useState("");
+  const [selectedUserId,setSelectedUserId] = useState(0)
   const [users, setUsers] = useState([]);
 
+  // formValidation
+  const validateUserForm = (username, password, email, course) => {
+    // Check if any field is empty
+    if (!username || !password || !email || !course) {
+      alert("Please fill out all fields.");
+      return false;
+    }
+  
+    // Password strength validation (minimum 8 characters)
+    if (password.length < 8) {
+      alert("Password must be at least 8 characters long.");
+      return false;
+    }
+  
+    // Email format validation
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailPattern.test(email)) {
+      alert("Please enter a valid email address.");
+      return false;
+    }
+  
+    // All validations passed
+    return true;
+  };
+  
   // insert User
   const handleAddUser = async () => {
+    if (!validateUserForm(username, password, email, course)) {
+      return;
+    }
     console.log("started");
     let docRef = doc(db, "users", "advantech");
     try {
@@ -28,7 +62,7 @@ export default function Admin() {
         const prevData = docSnap.data()["students"];
         await setDoc(docRef, { students: [...prevData, userData] });
         console.log("done");
-        hideModal();
+        hideModal('myModal');
       }
     } catch (error) {
       console.log(error.message);
@@ -37,17 +71,20 @@ export default function Admin() {
 
   // clearFields
   const clearFields = () => {
-    setUsername("");
-    setPassword("");
-    setCourse("");
-    setPassword("");
+    setAddUsername("");
+    setAddPassword("");
+    setAddCourse("");
+    setAddPassword("");
+    setAddEmail("");
   };
 
-  // hide modal
-  const hideModal = () => {
-    clearFields();
-    let clsBtn = document.querySelector("[data-bs-dismiss]");
-    clsBtn.click();
+  // toggle modal
+  const hideModal = (modalId) => {
+    if(modalId == 'myModal'){
+      document.getElementById('addCloseBtn').click()
+    }else{
+      document.getElementById('alterCloseBtn').click()
+    }
   };
 
   // show users
@@ -68,12 +105,60 @@ export default function Admin() {
 
   // alter users
   const AlterUser = (id) => {
+    if (!validateUserForm(alterUsername, alterPassword, alterEmail, alterCourse)) {
+      return;
+    }
+    clearFields();
+    setSelectedUserId(id)
+    const user = users.find((user) => user.id === id);
+    if (user) {
+      console.log(user);
+      setAlterUsername(user.username);
+      setAlterEmail(user.email);
+      setAlterPassword(user.password);
+      setAlterCourse(user.course);
+    }
+  };
+  
+  // alterUser details
+  const handleAlterUser = async ()=>{ 
+    try {
+      const docRef = doc(db, "users", "advantech");
+      const updatedUsers = users.map((user) => {
+        if (user.id === selectedUserId) {
+          return {
+            ...user,
+            username: alterUsername,
+            email: alterEmail,
+            password: alterPassword,
+            course: alterCourse,
+          };
+        }
+        return user;
+      });
+  
+      await updateDoc(docRef, { students: updatedUsers });
+      hideModal('myModal1');
+      fetchData();
+    } catch (error) {
+      console.log(error.message);
+    }
+  
+  }
+  
+  // Delete User 
+  const deleteUser = async (id) => {
+    const docRef = doc(db, "users", "advantech");
     console.log(id);
+    const updatedUsers = users.filter((user) => user.id !== id);
+    try {
+      await updateDoc(docRef, { students: updatedUsers });
+      fetchData()
+    } catch (err) {
+      console.log(err);
+    }
   };
 
-  const deleteUser = (id) => {
-    console.log(id);
-  };
   return (
     <>
       <div className="admin-page">
@@ -97,31 +182,39 @@ export default function Admin() {
             </tr>
           </thead>
           <tbody>
-            {users.map((user) => (
-              <tr key={user.id}>
-                <td>{user.email}</td>
-                <td>{user.username}</td>
-                <td>
-                  <button
-                    className="btn mx-2 btn-warning"
-                    onClick={() => {
-                      AlterUser(user.id);
-                    }}
-                  >
-                    Alter
-                  </button>
-                  <button
-                    className="btn mx-2 btn-danger"
-                    onClick={() => {
-                      deleteUser(user.id);
-                    }}
-                  >
-                    Delete
-                  </button>
-                </td>
-                {/* Add more columns as needed */}
+            {users ? (
+              users.map((user) => (
+                <tr key={user.id}>
+                  <td>{user.email}</td>
+                  <td>{user.username}</td>
+                  <td>
+                    <button
+                      className="btn mx-2 btn-warning"
+                      data-bs-target="#myModal1"
+                      data-bs-toggle="modal"
+                      onClick={() => {
+                        AlterUser(user.id);
+                      }}
+                    >
+                      Alter
+                    </button>
+                    <button
+                      className="btn mx-2 btn-danger"
+                      onClick={() => {
+                        deleteUser(user.id);
+                      }}
+                    >
+                      Delete
+                    </button>
+                  </td>
+                  {/* Add more columns as needed */}
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colspan="3">No records</td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
       </div>
@@ -136,6 +229,7 @@ export default function Admin() {
                 type="button"
                 className="btn-close"
                 data-bs-dismiss="modal"
+                id="addCloseBtn"
               ></button>
             </div>
             <div className="modal-body">
@@ -144,16 +238,16 @@ export default function Admin() {
                 className="form-control my-2"
                 placeholder="Username"
                 onChange={(e) => {
-                  setUsername(e.target.value);
+                  setAddUsername(e.target.value);
                 }}
-                value={username}
+                value={username ? username : ""}
               />
               <input
                 type="text"
                 className="form-control my-2"
                 placeholder="Password"
                 onChange={(e) => {
-                  setPassword(e.target.value);
+                  setAddPassword(e.target.value);
                 }}
                 value={password}
               />
@@ -162,7 +256,7 @@ export default function Admin() {
                 className="form-control my-2"
                 placeholder="Email"
                 onChange={(e) => {
-                  setEmail(e.target.value);
+                  setAddEmail(e.target.value);
                 }}
                 value={email}
               />
@@ -171,7 +265,7 @@ export default function Admin() {
                 className="form-select my-2"
                 placeholder="Course"
                 onChange={(e) => {
-                  setCourse(e.target.value);
+                  setAddCourse(e.target.value);
                 }}
               >
                 <option value="" hidden={true}>
@@ -199,6 +293,81 @@ export default function Admin() {
                 }}
               >
                 Add
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* alter Modal */}
+      <div className="modal" id="myModal1">
+        <div className="modal-dialog">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h4 className="modal-title">Alter User</h4>
+              <button
+                type="button"
+                className="btn-close"
+                data-bs-dismiss="modal"
+                id="alterCloseBtn"
+              ></button>
+            </div>
+            <div className="modal-body">
+              <input
+                type="text"
+                className="form-control my-2"
+                placeholder="Username"
+                onChange={(e) => {
+                  setAlterUsername(e.target.value);
+                }}
+                value={alterUsername}
+              />
+              <input
+                type="text"
+                className="form-control my-2"
+                placeholder="Password"
+                onChange={(e) => {
+                  setAlterPassword(e.target.value);
+                }}
+                value={alterPassword}
+              />
+              <input
+                type="text"
+                className="form-control my-2"
+                placeholder="Email"
+                onChange={(e) => {
+                  setAlterEmail(e.target.value);
+                }}
+                value={alterEmail}
+              />
+              
+                <input
+                  type="text"
+                  className="form-control my-2"
+                  placeholder="Course"
+                  value={alterCourse}
+                  onChange={(e) => {
+                    setAlterCourse(e.target.value);
+                  }}
+                />
+                
+            </div>
+            <div className="modal-footer">
+              <button
+                type="button"
+                className="btn btn-danger"
+                data-bs-dismiss="modal"
+              >
+                Close
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => {
+                  handleAlterUser();
+                }}
+              >
+                Modify
               </button>
             </div>
           </div>
