@@ -1,16 +1,7 @@
 import { useEffect } from "react";
 
 export default function Home() {
-  const handleUser = () => {
-    if (!localStorage.hasOwnProperty("user")) {
-      localStorage.setItem("user", "{}");
-    }
-  };
-
-  useEffect(() => {
-    handleUser();
-  }, []);
-
+  
   return (
     <>
       <div className="container">

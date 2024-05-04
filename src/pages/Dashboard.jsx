@@ -1,11 +1,19 @@
-import React from "react";
+import React, { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 const Dashboard = () => {
+  const navigate = useNavigate();
   const checkUser = function () {
-    console.log(localStorage);
+    // console.log(localStorage);
+    if (localStorage.hasOwnProperty("user")) {
+    } else {
+      navigate("/login");
+    }
   };
 
-  checkUser();
+  useEffect(() => {
+    checkUser();
+  }, [localStorage]);
   return (
     <div className="container">
       <h1 className="mt-4 mb-4">Student Management System Dashboard</h1>

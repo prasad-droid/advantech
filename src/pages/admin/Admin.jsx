@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { auth, db } from "../firebase_config";
-import { collection, getDoc, doc, setDoc } from "firebase/firestore";
+import { db } from "../../firebase_config";
+import { getDoc, doc } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
 
 export default function Admin() {
@@ -9,19 +9,26 @@ export default function Admin() {
   const [msg, setMessage] = useState("");
 
   const navigate = useNavigate();
-  const handleSubmit = async () => {
-    let docRef = doc(db, "admins", "advantech");
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     try {
+      let docRef = doc(db, "admins", "advantech");
       let docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
-        for (let i = 0; i < docSnap.data().admins.length; i++) {
-          const admin = docSnap.data().admins[i];
-          if (admin.uname == Username && admin.pwd == Password) {
-            navigate('/admindashboard');
-            break;
-          } else {
-            setMessage("Incorrect Credentials");
+        console.log();
+        let data = docSnap.data()["admins"];
+        let user = data.filter((u) => {
+          if (u.uname === Username && u.pwd === Password) {
+            console.log(u);
+            return u
           }
+        });
+        if(user.length != 0){
+          alert("Welcome "+user[0].username)
+          localStorage.setItem('admin',JSON.stringify(user[0]))
+          navigate('/admindashboard')
+        }else{
+          setMessage("Invalid Credentials")
         }
       }
     } catch (error) {
@@ -52,7 +59,7 @@ export default function Admin() {
           type="button"
           value="submit"
           className="btn btn-primary"
-          onClick={handleSubmit}
+          onClick={(e)=>{handleSubmit(e)}}
         />
         <span className="text-danger">{msg}</span>
       </div>
