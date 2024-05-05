@@ -21,7 +21,7 @@ export default function Login() {
       let docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
         console.log();
-        let data = docSnap.data()["students"];
+        let data = docSnap.data()["users"];
         let user = data.filter((u) => {
           if (u.email === email && u.password === password) {
             console.log(u);

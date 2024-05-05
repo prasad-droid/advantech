@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { db } from "../firebase_config";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 
 export default function Book() {
   const navigate = useNavigate();
   const [books, setBooks] = useState([]);
+  const [user, setUser] = useState("");
+  const [bookName, setBookName] = useState("");
+
   const checkUser = function () {
     // console.log(localStorage);
     if (localStorage.hasOwnProperty("user")) {
@@ -23,23 +26,56 @@ export default function Book() {
     let docRef = doc(db, "users", "advantech");
     let docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
-      let data = docSnap.data()["students"];
+      let data = docSnap.data()["users"];
       let user = data.filter((u) => {
         if (u.id == id) {
           return u;
         }
       });
-      console.log(user);
-      let books = user[0]["books"];
-      console.log(books);
-      setBooks(books);
+      setUser(user[0]);
+      setBooks(user[0]["books"]);
     }
   };
 
-  const handleApply = () => {
-    let cs = prompt("Does Your Course Started ?");
-    console.log(cs);
+  const handleApply = async (n, u) => {
+    if (n && u && bookName) {
+      try {
+        let docRef = doc(db, "books", "advantech");
+        let docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+          const prevData = docSnap.data().books || []; // Ensure prevData is an array
+          if (
+            prevData.some(
+              (book) => book.bookName === bookName && book.studId === u.id
+            )
+          ) {
+            alert("You have already applied for this book.");
+            return;
+          } else {
+            let newBook = {
+              bookName: bookName,
+              studId: u.id,
+              studentName: u.username,
+            };
+            await setDoc(
+              docRef,
+              { books: [...prevData, newBook] },
+              { merge: true }
+            );
+            alert("Book applied successfully.");
+          }
+        } else {
+          alert("Document does not exist.");
+        }
+      } catch (error) {
+        console.error("Error applying book:", error);
+      }
+    } else {
+      alert("Invalid parameters for applying book.");
+    }
   };
+
   return (
     <>
       <h1 className="text-center">Books</h1>
@@ -66,7 +102,12 @@ export default function Book() {
                           ? "btn btn-secondary disabled"
                           : `btn btn-warning`
                       }
-                      data-bs-toggle="modal" data-bs-target="#myModal"
+                      data-bs-toggle="modal"
+                      data-bs-target="#myModal"
+                      onClick={() => {
+                        setBookName(book.name);
+                        console.log(bookName);
+                      }}
                     >
                       {book.status ? "Applied" : "Apply"}
                     </button>
@@ -95,7 +136,7 @@ export default function Book() {
                 type="button"
                 className="btn btn-success"
                 data-bs-dismiss="modal"
-                onClick={() => handleApply(1)}
+                onClick={() => handleApply(1, user)}
               >
                 Yes
               </button>

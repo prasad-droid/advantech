@@ -93,7 +93,7 @@ export default function ManageUsers() {
           course: selectedCourses,
           books: selectedBooks,
         };
-        const prevData = docSnap.data()["students"];
+        const prevData = docSnap.data()["users"];
         await setDoc(docRef, { students: [...prevData, userData] });
         console.log("done");
         hideModal("myModal");
@@ -127,7 +127,8 @@ export default function ManageUsers() {
     try {
       let docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
-        setUsers(docSnap.data()["students"]);
+        setUsers(docSnap.data()["users"]);
+        // console.log(users);
       }
     } catch (error) {
       console.log(error.message);
@@ -215,7 +216,7 @@ export default function ManageUsers() {
         >
           Add User
         </button>
-        <table className="user-table">
+        <table className="table table-dark table-striped table-hover">
           <thead>
             <tr>
               <th>Email</th>
