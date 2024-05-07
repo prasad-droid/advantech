@@ -47,6 +47,14 @@ export default function Admin() {
           <i className="fa-solid fa-book mx-2"></i>
           Manage Books
         </button>
+        <button
+          type="button"
+          className="btn btn-primary m-2"
+          onClick={()=>{navigate('/manageExams')}}
+        >
+          <i className="fa-solid fa-book mx-2"></i>
+          Manage Exams
+        </button>
         
         
       </div>

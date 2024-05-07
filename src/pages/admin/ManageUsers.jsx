@@ -20,6 +20,7 @@ export default function ManageUsers() {
   const [password, setAddPassword] = useState("");
   const [selectedCourses, setSelectedCourses] = useState([]);
   const [selectedBooks, setSelectedBooks] = useState([]);
+  const [selectedExams, setSelectedExams] = useState([]);
 
   // State variables for Alter User modal
   const [alterUsername, setAlterUsername] = useState("");
@@ -40,13 +41,12 @@ export default function ManageUsers() {
     const { value, checked } = e.target;
     if (checked) {
       setSelectedCourses([...selectedCourses, value]);
-      setSelectedBooks([
-        ...selectedBooks,
-        { name: value, status: false, reason: "Course not Started" },
-      ]);
+      setSelectedBooks([...selectedBooks,{ name: value, status: false, reason: "Course not Started" }]);
+      setSelectedExams([...selectedExams,{name:value,status:false,reason:'Course Not Completed'}])
     } else {
       setSelectedBooks(selectedBooks.filter((books) => books !== value));
       setSelectedCourses(selectedCourses.filter((course) => course !== value));
+      setSelectedExams(selectedExams.filter((exam) => exam !== value));
     }
   };
 
@@ -92,9 +92,10 @@ export default function ManageUsers() {
           email: email,
           course: selectedCourses,
           books: selectedBooks,
+          exams: selectedExams,
         };
         const prevData = docSnap.data()["users"];
-        await setDoc(docRef, { students: [...prevData, userData] });
+        await setDoc(docRef, { users: [...prevData, userData] });
         console.log("done");
         hideModal("myModal");
       }
@@ -106,10 +107,18 @@ export default function ManageUsers() {
   // clearFields
   const clearFields = () => {
     setAddUsername("");
-    setAddPassword("");
+    setAddEmail("");
     setAddCourse("");
     setAddPassword("");
-    setAddEmail("");
+    setSelectedCourses([]);
+    setSelectedBooks([]);
+    setSelectedExams([]);
+    setAlterUsername("");
+    setAlterEmail("");
+    setAlterCourse("");
+    setAlterPassword("");
+    setSelectedUserId("");
+    setUsers("");
   };
 
   // toggle modal
@@ -185,7 +194,7 @@ export default function ManageUsers() {
     console.log(id);
     const updatedUsers = users.filter((user) => user.id !== id);
     try {
-      await updateDoc(docRef, { students: updatedUsers });
+      await updateDoc(docRef, { users: updatedUsers });
       fetchData();
     } catch (err) {
       console.log(err);
@@ -255,7 +264,7 @@ export default function ManageUsers() {
               ))
             ) : (
               <tr>
-                <td colspan="3">No records</td>
+                <td colSpan={3}>No records</td>
               </tr>
             )}
           </tbody>
